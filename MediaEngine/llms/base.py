@@ -20,9 +20,14 @@ if utils_dir not in sys.path:
 try:
     from retry_helper import with_retry, LLM_RETRY_CONFIG
 except ImportError:
+    import functools, warnings
     def with_retry(config=None):
         def decorator(func):
-            return func
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                warnings.warn("retry_helper missing — with_retry is a no-op", RuntimeWarning)
+                return func(*args, **kwargs)
+            return wrapper
         return decorator
 
     LLM_RETRY_CONFIG = None
