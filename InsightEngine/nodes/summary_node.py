@@ -45,17 +45,39 @@ class FirstSummaryNode(StateMutationNode):
     
     def validate_input(self, input_data: Any) -> bool:
         """验证输入数据"""
-        if isinstance(input_data, str):
+        required_fields = {"title", "content", "search_query", "search_results"}
+        
+        # 规范化输入数据
+        data = input_data
+        if isinstance(data, str):
             try:
-                data = json.loads(input_data)
-                required_fields = ["title", "content", "search_query", "search_results"]
-                return all(field in data for field in required_fields)
-            except JSONDecodeError:
+                data = json.loads(data)
+            except JSONDecodeError as e:
+                logger.error(f"JSON解析失败: {str(e)}")
                 return False
-        elif isinstance(input_data, dict):
-            required_fields = ["title", "content", "search_query", "search_results"]
-            return all(field in input_data for field in required_fields)
-        return False
+        elif not isinstance(data, dict):
+            logger.error(f"输入类型错误，期望str或dict，实际为{type(data).__name__}")
+            return False
+        
+        # 验证必需字段
+        missing_fields = required_fields - data.keys()
+        if missing_fields:
+            logger.error(f"缺少必需字段: {missing_fields}")
+            return False
+        
+        # 验证search_results是否为非空列表
+        search_results = data.get("search_results")
+        if not isinstance(search_results, list) or not search_results:
+            logger.error("search_results必须是非空列表")
+            return False
+        
+        # 验证其他字段值不为空
+        for field in ["title", "content", "search_query"]:
+            if not data.get(field, "").strip():
+                logger.error(f"字段 '{field}' 为空或只包含空白字符")
+                return False
+        
+        return True
     
     def run(self, input_data: Any, **kwargs) -> str:
         """
@@ -210,17 +232,39 @@ class ReflectionSummaryNode(StateMutationNode):
     
     def validate_input(self, input_data: Any) -> bool:
         """验证输入数据"""
-        if isinstance(input_data, str):
+        required_fields = {"title", "content", "search_query", "search_results", "paragraph_latest_state"}
+        
+        # 规范化输入数据
+        data = input_data
+        if isinstance(data, str):
             try:
-                data = json.loads(input_data)
-                required_fields = ["title", "content", "search_query", "search_results", "paragraph_latest_state"]
-                return all(field in data for field in required_fields)
-            except JSONDecodeError:
+                data = json.loads(data)
+            except JSONDecodeError as e:
+                logger.error(f"JSON解析失败: {str(e)}")
                 return False
-        elif isinstance(input_data, dict):
-            required_fields = ["title", "content", "search_query", "search_results", "paragraph_latest_state"]
-            return all(field in input_data for field in required_fields)
-        return False
+        elif not isinstance(data, dict):
+            logger.error(f"输入类型错误，期望str或dict，实际为{type(data).__name__}")
+            return False
+        
+        # 验证必需字段
+        missing_fields = required_fields - data.keys()
+        if missing_fields:
+            logger.error(f"缺少必需字段: {missing_fields}")
+            return False
+        
+        # 验证search_results是否为非空列表
+        search_results = data.get("search_results")
+        if not isinstance(search_results, list) or not search_results:
+            logger.error("search_results必须是非空列表")
+            return False
+        
+        # 验证其他字段值不为空
+        for field in ["title", "content", "search_query", "paragraph_latest_state"]:
+            if not data.get(field, "").strip():
+                logger.error(f"字段 '{field}' 为空或只包含空白字符")
+                return False
+        
+        return True
     
     def run(self, input_data: Any, **kwargs) -> str:
         """

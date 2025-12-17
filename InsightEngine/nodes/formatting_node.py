@@ -29,23 +29,55 @@ class ReportFormattingNode(BaseNode):
         """
         super().__init__(llm_client, "ReportFormattingNode")
     
+    def _is_valid_item(self, item: Any, index: int) -> bool:
+        """
+        验证单个数据项是否有效
+        
+        Args:
+            item: 要验证的项目
+            index: 项目索引
+            
+        Returns:
+            项目是否有效
+        """
+        required_keys = {"title", "paragraph_latest_state"}
+        
+        if not isinstance(item, dict):
+            logger.error(f"数据项 {index} 类型错误，期望dict，实际为{type(item).__name__}")
+            return False
+        
+        missing_keys = required_keys - item.keys()
+        if missing_keys:
+            logger.error(f"数据项 {index} 缺少必需的键: {missing_keys}")
+            return False
+        
+        return True
+    
     def validate_input(self, input_data: Any) -> bool:
         """验证输入数据"""
-        if isinstance(input_data, str):
+        # 规范化输入数据
+        data = input_data
+        if isinstance(data, str):
             try:
-                data = json.loads(input_data)
-                return isinstance(data, list) and all(
-                    isinstance(item, dict) and "title" in item and "paragraph_latest_state" in item
-                    for item in data
-                )
-            except:
+                data = json.loads(data)
+            except (json.JSONDecodeError, ValueError) as e:
+                logger.error(f"JSON解析失败: {str(e)}")
                 return False
-        elif isinstance(input_data, list):
-            return all(
-                isinstance(item, dict) and "title" in item and "paragraph_latest_state" in item
-                for item in input_data
-            )
-        return False
+        elif not isinstance(data, list):
+            logger.error(f"输入类型错误，期望str或list，实际为{type(data).__name__}")
+            return False
+        
+        # 验证数据格式
+        if not data:
+            logger.warning("输入数据为空列表")
+            return False
+        
+        # 验证每个项目
+        for i, item in enumerate(data):
+            if not self._is_valid_item(item, i):
+                return False
+        
+        return True
     
     def run(self, input_data: Any, **kwargs) -> str:
         """

@@ -2,6 +2,7 @@
 Deep Search Agent 的所有提示词定义
 包含各个阶段的系统提示词和JSON Schema定义
 """
+# 系统：事件 → 舆情 → 民意
 
 import json
 
